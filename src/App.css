@@ -1,0 +1,47 @@
+.game-shell, .loading-shell { min-height: 100vh; background: #111310; color: #e8e5dc; }
+.game-shell { padding: 32px; }
+header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; max-width: 1440px; margin: 0 auto 28px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -.055em; font-weight: 600; }
+h2 { font-size: 1.25rem; letter-spacing: -.025em; margin-bottom: 8px; }
+h3 { font-size: 1rem; font-weight: 600; }
+.eyebrow { color: #9da594; font-size: .68rem; letter-spacing: .14em; font-weight: 700; margin-bottom: 9px; }
+code, textarea, td, th { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+code { color: #d6e68e; font-size: .85em; }
+.run-controls { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 10px; color: #9da594; font-size: .85rem; }
+button { border: 1px solid #3b4138; color: #e8e5dc; background: transparent; padding: 9px 13px; border-radius: 5px; }
+button:hover { border-color: #b9c27e; }
+button.primary, .run-button { color: #10120e; border-color: #d6e68e; background: #d6e68e; font-weight: 700; }
+.case-file { max-width: 1440px; margin: 0 auto 18px; border: 1px solid #31372e; border-left: 3px solid #d6e68e; padding: 20px; background: #191c17; }
+.case-file > p:last-child { max-width: 680px; color: #c3c6bd; line-height: 1.5; }
+.workspace { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 252px minmax(0, 1fr); border: 1px solid #31372e; min-height: 600px; }
+.schema { background: #161916; border-right: 1px solid #31372e; padding: 18px 14px; }
+.schema-heading, .editor-heading, .result-heading { display: flex; justify-content: space-between; align-items: center; }
+.schema-heading span { color: #9da594; font: .72rem ui-monospace, monospace; }
+.table-card { padding: 14px 11px; border: 1px solid #30352d; margin-top: 12px; background: #1b1f1a; }
+.table-card > p { color: #8f9689; font-size: .75rem; margin-top: 3px; }
+ul { margin: 12px 0 0; padding: 0; list-style: none; }
+li { color: #c2c6bc; font: .75rem ui-monospace, monospace; padding: 4px 0; }
+li::before { content: '·'; color: #d6e68e; margin-right: 7px; }
+.editor-panel { display: grid; grid-template-rows: auto 270px auto 1fr; min-width: 0; }
+.editor-heading, .result-heading { padding: 14px 18px; border-bottom: 1px solid #31372e; }
+.editor-heading .eyebrow, .result-heading .eyebrow, .schema-heading .eyebrow { margin: 0; }
+.run-button { padding: 8px 11px; font-size: .8rem; }
+kbd { margin-left: 8px; color: #536037; font-family: inherit; }
+textarea { resize: vertical; border: 0; outline: 0; background: #111310; color: #e6eadf; padding: 22px; font-size: .93rem; line-height: 1.65; }
+.result-panel { border-top: 1px solid #31372e; min-height: 0; background: #151714; }
+.solved { color: #d6e68e; font-size: .8rem; font-weight: 700; }
+.empty, .error { padding: 20px; color: #969d90; }
+.error { color: #f3a39b; border-top: 1px solid #533430; background: #211715; }
+.table-scroll { overflow: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: .8rem; }
+th { color: #aeb5a6; font-weight: 500; background: #1b1e1a; }
+th, td { white-space: nowrap; padding: 11px 16px; border-bottom: 1px solid #292d27; }
+td { color: #d7dbd2; }
+.loading-shell { display: grid; place-content: center; padding: 28px; text-align: center; }
+.loading-shell h1 { max-width: 660px; margin: 0 auto; }
+.loading-copy { color: #c3c6bd; margin-top: 36px; }
+.progress-track { width: min(420px, 100%); height: 4px; margin: 14px auto; background: #2d322b; overflow: hidden; }
+.progress-track span { display: block; height: 100%; background: #d6e68e; transition: width .3s ease; }
+.loading-note { color: #7f8779; font-size: .8rem; }
+@media (max-width: 720px) { .game-shell { padding: 18px; } header { display: block; } .run-controls { justify-content: flex-start; margin-top: 18px; } .workspace { grid-template-columns: 1fr; } .schema { border-right: 0; border-bottom: 1px solid #31372e; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .schema-heading { grid-column: 1 / -1; } .table-card { margin: 0; } .editor-panel { grid-template-rows: auto 250px auto 1fr; } }

@@ -1,0 +1,5 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #e8e5dc; background: #111310; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, textarea { font: inherit; }
+button { cursor: pointer; }
