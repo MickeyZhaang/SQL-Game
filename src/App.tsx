@@ -4,6 +4,7 @@ import GameWorker from './game/worker?worker'
 import './App.css'
 
 const storageKey = 'sql-game-current-seed'
+const minimumLoadingTime = 3400
 
 function newSeed() {
   return crypto.randomUUID().slice(0, 8)
@@ -11,6 +12,9 @@ function newSeed() {
 
 function App() {
   const worker = useRef<Worker | null>(null)
+  const loadingStartedAt = useRef(0)
+  const latestSeed = useRef('')
+  const readyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [seed, setSeed] = useState(() => localStorage.getItem(storageKey) ?? newSeed())
   const [world, setWorld] = useState<World | null>(null)
   const [progress, setProgress] = useState({ label: 'Preparing your case file', progress: 0 })
@@ -26,10 +30,16 @@ function App() {
       const message = event.data
       if (message.type === 'progress') setProgress({ label: message.label, progress: message.progress })
       if (message.type === 'ready') {
-        setWorld(message.world)
-        setQuery(message.world.objective.starterQuery)
-        setProgress({ label: 'Workspace ready', progress: 100 })
-        setIsLoading(false)
+        if (message.world.seed !== latestSeed.current) return
+        const remainingTime = Math.max(0, minimumLoadingTime - (performance.now() - loadingStartedAt.current))
+        setProgress({ label: 'Finalizing your case file', progress: 96 })
+        clearTimeout(readyTimer.current)
+        readyTimer.current = setTimeout(() => {
+          setWorld(message.world)
+          setQuery(message.world.objective.starterQuery)
+          setProgress({ label: 'Workspace ready', progress: 100 })
+          setIsLoading(false)
+        }, remainingTime)
       }
       if (message.type === 'result') {
         setResult(message.result)
@@ -37,27 +47,35 @@ function App() {
       }
       if (message.type === 'error') setError(message.message)
     }
-    return () => instance.terminate()
+    return () => {
+      clearTimeout(readyTimer.current)
+      instance.terminate()
+    }
   }, [])
 
   useEffect(() => {
+    latestSeed.current = seed
+    loadingStartedAt.current = performance.now()
     localStorage.setItem(storageKey, seed)
     worker.current?.postMessage({ type: 'initialize', seed })
   }, [seed])
 
-  function restart() {
+  function startLoading() {
+    loadingStartedAt.current = performance.now()
+    clearTimeout(readyTimer.current)
     setIsLoading(true)
     setResult(null)
     setError('')
     setProgress({ label: 'Preparing your case file', progress: 5 })
+  }
+
+  function restart() {
+    startLoading()
     worker.current?.postMessage({ type: 'initialize', seed })
   }
 
   function beginNewRun() {
-    setIsLoading(true)
-    setResult(null)
-    setError('')
-    setProgress({ label: 'Preparing your case file', progress: 5 })
+    startLoading()
     setSeed(newSeed())
   }
 
