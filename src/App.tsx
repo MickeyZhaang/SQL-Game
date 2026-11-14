@@ -15,6 +15,7 @@ function App() {
   const loadingStartedAt = useRef(0)
   const latestSeed = useRef('')
   const readyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const progressTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const [seed, setSeed] = useState(() => localStorage.getItem(storageKey) ?? newSeed())
   const [world, setWorld] = useState<World | null>(null)
   const [progress, setProgress] = useState({ label: 'Preparing your case file', progress: 0 })
@@ -23,18 +24,28 @@ function App() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
+  function startProgressTimer() {
+    clearInterval(progressTimer.current)
+    progressTimer.current = setInterval(() => {
+      const elapsed = performance.now() - loadingStartedAt.current
+      const timedProgress = Math.min(96, 5 + Math.round((elapsed / minimumLoadingTime) * 91))
+      setProgress((current) => ({ ...current, progress: timedProgress }))
+    }, 50)
+  }
+
   useEffect(() => {
     const instance = new GameWorker()
     worker.current = instance
     instance.onmessage = (event: MessageEvent<WorkerMessage>) => {
       const message = event.data
-      if (message.type === 'progress') setProgress({ label: message.label, progress: message.progress })
+      if (message.type === 'progress') setProgress((current) => ({ ...current, label: message.label }))
       if (message.type === 'ready') {
         if (message.world.seed !== latestSeed.current) return
         const remainingTime = Math.max(0, minimumLoadingTime - (performance.now() - loadingStartedAt.current))
-        setProgress({ label: 'Finalizing your case file', progress: 96 })
+        setProgress((current) => ({ ...current, label: 'Finalizing your case file' }))
         clearTimeout(readyTimer.current)
         readyTimer.current = setTimeout(() => {
+          clearInterval(progressTimer.current)
           setWorld(message.world)
           setQuery(message.world.objective.starterQuery)
           setProgress({ label: 'Workspace ready', progress: 100 })
@@ -49,6 +60,7 @@ function App() {
     }
     return () => {
       clearTimeout(readyTimer.current)
+      clearInterval(progressTimer.current)
       instance.terminate()
     }
   }, [])
@@ -56,6 +68,7 @@ function App() {
   useEffect(() => {
     latestSeed.current = seed
     loadingStartedAt.current = performance.now()
+    startProgressTimer()
     localStorage.setItem(storageKey, seed)
     worker.current?.postMessage({ type: 'initialize', seed })
   }, [seed])
@@ -63,6 +76,7 @@ function App() {
   function startLoading() {
     loadingStartedAt.current = performance.now()
     clearTimeout(readyTimer.current)
+    startProgressTimer()
     setIsLoading(true)
     setResult(null)
     setError('')
