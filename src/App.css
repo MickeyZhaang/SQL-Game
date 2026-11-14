@@ -11,13 +11,21 @@ code { color: #d6e68e; font-size: .85em; }
 .run-controls { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 10px; color: #9da594; font-size: .85rem; }
 button { border: 1px solid #3b4138; color: #e8e5dc; background: transparent; padding: 9px 13px; border-radius: 5px; }
 button:hover { border-color: #b9c27e; }
+button:disabled { cursor: not-allowed; opacity: .5; }
 button.primary, .run-button { color: #10120e; border-color: #d6e68e; background: #d6e68e; font-weight: 700; }
+.mode-switcher { max-width: 1440px; margin: 0 auto 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mode { display: flex; align-items: baseline; justify-content: space-between; text-align: left; padding: 12px 14px; }
+.mode small { color: #8f9689; font-size: .72rem; }
+.mode.active { color: #10120e; border-color: #d6e68e; background: #d6e68e; }
+.mode.active small { color: #536037; }
 .case-file { max-width: 1440px; margin: 0 auto 18px; border: 1px solid #31372e; border-left: 3px solid #d6e68e; padding: 20px; background: #191c17; }
 .case-file > p:last-child { max-width: 680px; color: #c3c6bd; line-height: 1.5; }
 .workspace { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 252px minmax(0, 1fr); border: 1px solid #31372e; min-height: 600px; }
 .schema { background: #161916; border-right: 1px solid #31372e; padding: 18px 14px; }
 .schema-heading, .editor-heading, .result-heading { display: flex; justify-content: space-between; align-items: center; }
 .schema-heading span { color: #9da594; font: .72rem ui-monospace, monospace; }
+.finding-count { display: flex; justify-content: space-between; color: #9da594; font-size: .75rem; padding: 14px 3px 2px; }
+.finding-count strong { color: #d6e68e; font-family: ui-monospace, monospace; }
 .table-card { padding: 14px 11px; border: 1px solid #30352d; margin-top: 12px; background: #1b1f1a; }
 .table-card > p { color: #8f9689; font-size: .75rem; margin-top: 3px; }
 ul { margin: 12px 0 0; padding: 0; list-style: none; }
@@ -32,6 +40,7 @@ textarea { resize: vertical; border: 0; outline: 0; background: #111310; color: 
 .result-panel { border-top: 1px solid #31372e; min-height: 0; background: #151714; }
 .solved { color: #d6e68e; font-size: .8rem; font-weight: 700; }
 .empty, .error { padding: 20px; color: #969d90; }
+.continue-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 18px; border-top: 1px solid #31372e; color: #c3c6bd; font-size: .85rem; }
 .error { color: #f3a39b; border-top: 1px solid #533430; background: #211715; }
 .table-scroll { overflow: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: .8rem; }
@@ -44,4 +53,4 @@ td { color: #d7dbd2; }
 .progress-track { width: min(420px, 100%); height: 4px; margin: 14px auto; background: #2d322b; overflow: hidden; }
 .progress-track span { display: block; height: 100%; background: #d6e68e; transition: width .3s ease; }
 .loading-note { color: #7f8779; font-size: .8rem; }
-@media (max-width: 720px) { .game-shell { padding: 18px; } header { display: block; } .run-controls { justify-content: flex-start; margin-top: 18px; } .workspace { grid-template-columns: 1fr; } .schema { border-right: 0; border-bottom: 1px solid #31372e; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .schema-heading { grid-column: 1 / -1; } .table-card { margin: 0; } .editor-panel { grid-template-rows: auto 250px auto 1fr; } }
+@media (max-width: 720px) { .game-shell { padding: 18px; } header { display: block; } .run-controls { justify-content: flex-start; margin-top: 18px; } .mode-switcher { grid-template-columns: 1fr; } .workspace { grid-template-columns: 1fr; } .schema { border-right: 0; border-bottom: 1px solid #31372e; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .schema-heading { grid-column: 1 / -1; } .table-card { margin: 0; } .editor-panel { grid-template-rows: auto 250px auto 1fr; } .continue-row { align-items: flex-start; flex-direction: column; } }

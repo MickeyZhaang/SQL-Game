@@ -9,16 +9,21 @@ export type Objective = {
   title: string
   prompt: string
   starterQuery: string
+  order: 'required' | 'irrelevant'
 }
+
+export type Difficulty = 'easy' | 'medium' | 'hard'
 
 export type World = {
   seed: string
   caseName: string
+  mode: Difficulty
   tables: TableDefinition[]
-  objective: Objective
+  objectives: Objective[]
 }
 
 export type QueryResult = {
+  objectiveId: string
   columns: string[]
   values: Array<Array<string | number | null>>
   solved: boolean
@@ -29,3 +34,7 @@ export type WorkerMessage =
   | { type: 'ready'; world: World }
   | { type: 'result'; result: QueryResult }
   | { type: 'error'; message: string }
+
+export type WorkerRequest =
+  | { type: 'initialize'; seed: string; mode: Difficulty }
+  | { type: 'execute'; objectiveId: string; query: string }
