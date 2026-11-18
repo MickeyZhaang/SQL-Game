@@ -5,6 +5,7 @@ h1, h2, h3, p { margin: 0; }
 h1 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -.055em; font-weight: 600; }
 h2 { font-size: 1.25rem; letter-spacing: -.025em; margin-bottom: 8px; }
 h3 { font-size: 1rem; font-weight: 600; }
+.case-summary { max-width: 560px; color: #9da594; line-height: 1.45; margin-top: 9px; }
 .eyebrow { color: #9da594; font-size: .68rem; letter-spacing: .14em; font-weight: 700; margin-bottom: 9px; }
 code, textarea, td, th { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 code { color: #d6e68e; font-size: .85em; }

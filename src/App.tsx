@@ -149,8 +149,8 @@ function App() {
 
   return <main className="game-shell">
     <header>
-      <div><p className="eyebrow">ACTIVE CASE</p><h1>{world.caseName}</h1></div>
-      <div className="run-controls"><span>Seed <code>{world.seed}</code></span><button onClick={restart}>Restart run</button><button className="primary" onClick={beginNewRun}>New run</button></div>
+      <div><p className="eyebrow">ACTIVE CASE / {world.caseId}</p><h1>{world.caseName}</h1><p className="case-summary">{world.caseSummary}</p></div>
+      <div className="run-controls"><span>Seed <code>{world.seed}</code></span><span>Case <code>{world.caseId}</code></span><button onClick={restart}>Restart run</button><button className="primary" onClick={beginNewRun}>New run</button></div>
     </header>
     <section className="mode-switcher" aria-label="Difficulty mode">{modes.map((option) => <button className={option.id === mode ? 'mode active' : 'mode'} key={option.id} onClick={() => changeMode(option.id)}><span>{option.label}</span><small>{option.detail}</small></button>)}</section>
     <section className="case-file"><p className="eyebrow">{investigationComplete ? 'CASE COMPLETE' : `INVESTIGATION ${String(objectiveIndex + 1).padStart(2, '0')} / ${String(world.objectives.length).padStart(2, '0')}`}</p><h2>{investigationComplete ? 'The case file is complete' : objective.title}</h2><p>{investigationComplete ? 'Start another run to investigate a new deterministic dataset.' : objective.prompt}</p></section>
