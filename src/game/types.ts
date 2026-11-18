@@ -14,9 +14,13 @@ export type Objective = {
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
+export type CaseId = 'margin' | 'freight' | 'marketplace'
+
 export type World = {
   seed: string
+  caseId: CaseId
   caseName: string
+  caseSummary: string
   mode: Difficulty
   tables: TableDefinition[]
   objectives: Objective[]
