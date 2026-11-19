@@ -28,6 +28,7 @@ export type World = {
 
 export type QueryResult = {
   objectiveId: string
+  submitted: boolean
   columns: string[]
   values: Array<Array<string | number | null>>
   solved: boolean
@@ -42,5 +43,6 @@ export type WorkerMessage =
 
 export type WorkerRequest =
   | { type: 'initialize'; seed: string; mode: Difficulty }
-  | { type: 'execute'; objectiveId: string; query: string }
+  | { type: 'test'; objectiveId: string; query: string }
+  | { type: 'submit'; objectiveId: string; query: string }
   | { type: 'reveal'; objectiveId: string }

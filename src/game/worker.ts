@@ -68,13 +68,14 @@ async function initialize(seed: string, mode: Difficulty) {
   send({ type: 'ready', world: generated.world })
 }
 
-function execute(objectiveId: string, query: string) {
+function execute(objectiveId: string, query: string, submitted: boolean) {
   if (!database) throw new Error('The workspace is still loading.')
+  if (!/^(SELECT|WITH)\b/i.test(query.trim())) throw new Error('Only read-only SELECT queries can be tested or submitted.')
   const expected = expectedResults.get(objectiveId)
   if (!expected) throw new Error('This investigation step is unavailable.')
   const statement = database.exec(query)[0]
   const values = (statement?.values ?? []) as Value[][]
-  const result: QueryResult = { objectiveId, columns: statement?.columns ?? [], values, solved: matchesExpected(values, expected) }
+  const result: QueryResult = { objectiveId, submitted, columns: statement?.columns ?? [], values, solved: submitted && matchesExpected(values, expected) }
   send({ type: 'result', result })
 }
 
@@ -91,7 +92,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   }
   try {
     if (event.data.type === 'reveal') reveal(event.data.objectiveId)
-    else execute(event.data.objectiveId, event.data.query)
+    else execute(event.data.objectiveId, event.data.query, event.data.type === 'submit')
   } catch (error) {
     send({ type: 'error', message: error instanceof Error ? error.message : 'The query could not be run.' })
   }
