@@ -121,6 +121,38 @@ function eventsCase(seed: string, mode: Difficulty): GeneratedCase {
   ))
 }
 
+type OperationalCase = { id: CaseId; name: string; summary: string; entity: string; entityLabel: string; activity: string; activityLabel: string; record: string; recordLabel: string; flagged: string; completed: string }
+
+const operationalCases: OperationalCase[] = [
+  { id: 'clinic', name: 'The treatment gap', summary: 'A clinic case tracing unusual treatment outcomes across patients and appointments.', entity: 'patients', entityLabel: 'patient', activity: 'appointments', activityLabel: 'appointment', record: 'treatments', recordLabel: 'treatment', flagged: 'escalated', completed: 'cleared' },
+  { id: 'campus', name: 'The course anomaly', summary: 'A campus case connecting students, enrollments, and assessment records.', entity: 'students', entityLabel: 'student', activity: 'enrollments', activityLabel: 'enrollment', record: 'assessments', recordLabel: 'assessment', flagged: 'review', completed: 'graded' },
+  { id: 'studio', name: 'The release slip', summary: 'A studio case following projects, production cycles, and release costs.', entity: 'projects', entityLabel: 'project', activity: 'production_cycles', activityLabel: 'production cycle', record: 'release_costs', recordLabel: 'release cost', flagged: 'overdue', completed: 'shipped' },
+  { id: 'farm', name: 'The failing harvest', summary: 'A farm case tracing fields, crop cycles, and harvest yields.', entity: 'fields', entityLabel: 'field', activity: 'crop_cycles', activityLabel: 'crop cycle', record: 'harvests', recordLabel: 'harvest', flagged: 'failed', completed: 'collected' },
+  { id: 'hotel', name: 'The refund wave', summary: 'A hospitality case connecting properties, stays, and guest charges.', entity: 'properties', entityLabel: 'property', activity: 'stays', activityLabel: 'stay', record: 'charges', recordLabel: 'charge', flagged: 'refunded', completed: 'settled' },
+  { id: 'energy', name: 'The grid drift', summary: 'An energy case following sites, operating periods, and meter readings.', entity: 'sites', entityLabel: 'site', activity: 'operating_periods', activityLabel: 'operating period', record: 'readings', recordLabel: 'reading', flagged: 'anomalous', completed: 'verified' },
+  { id: 'support', name: 'The unresolved queue', summary: 'A customer support case connecting accounts, tickets, and response costs.', entity: 'accounts', entityLabel: 'account', activity: 'tickets', activityLabel: 'ticket', record: 'responses', recordLabel: 'response', flagged: 'escalated', completed: 'resolved' },
+]
+
+function operationalCase(seed: string, mode: Difficulty, config: OperationalCase): GeneratedCase {
+  const random = randomFor(seed)
+  const regions = ['North', 'East', 'South', 'West']
+  const entities = Array.from({ length: 24 }, (_, index) => [index + 1, `${choose(random, ['Aster', 'Cedar', 'Harbor', 'Juniper', 'Summit'])} ${choose(random, ['One', 'Point', 'Works', 'Group'])}`, choose(random, regions)])
+  const activities = Array.from({ length: 66 }, (_, index) => [index + 1, 1 + Math.floor(random() * entities.length), choose(random, ['standard', 'priority', 'seasonal', 'special']), `2025-${String(1 + Math.floor(random() * 6)).padStart(2, '0')}-${String(1 + Math.floor(random() * 28)).padStart(2, '0')}`])
+  const records = activities.flatMap(([id]) => Array.from({ length: random() > .15 ? 1 + Math.floor(random() * 3) : 0 }, (_, index) => [Number(id) * 10 + index, id, 1000 + Math.floor(random() * 180000), random() > .18 ? config.completed : config.flagged]))
+  const entityId = `${config.entity === 'properties' ? 'property' : config.entity.slice(0, -1)}_id`
+  const activityId = `${config.activity.slice(0, -1)}_id`
+  const tables = [
+    table(config.entity, ['id', 'name', 'region'], entities, `CREATE TABLE ${config.entity} (id INTEGER PRIMARY KEY, name TEXT NOT NULL, region TEXT NOT NULL)`, `INSERT INTO ${config.entity} VALUES (?, ?, ?)`),
+    table(config.activity, ['id', entityId, 'kind', 'started_on'], activities, `CREATE TABLE ${config.activity} (id INTEGER PRIMARY KEY, ${entityId} INTEGER NOT NULL, kind TEXT NOT NULL, started_on TEXT NOT NULL)`, `INSERT INTO ${config.activity} VALUES (?, ?, ?, ?)`),
+    table(config.record, ['id', activityId, 'amount_cents', 'status'], records, `CREATE TABLE ${config.record} (id INTEGER PRIMARY KEY, ${activityId} INTEGER NOT NULL, amount_cents INTEGER NOT NULL, status TEXT NOT NULL)`, `INSERT INTO ${config.record} VALUES (?, ?, ?, ?)`),
+  ]
+  return makeCase(config.id, seed, mode, config.name, config.summary, tables, objectives(mode,
+    [objective(`${config.id}-north`, `Map northern ${config.entity}`, `Return the name and region for every ${config.entityLabel} in the North region.`, `SELECT name, region FROM ${config.entity} WHERE region = 'North';`), objective(`${config.id}-flagged`, `Locate flagged ${config.record}`, `Return each flagged ${config.recordLabel} id, ${config.entityLabel} name, and ${config.activityLabel} kind.`, `SELECT r.id, e.name, a.kind FROM ${config.record} r JOIN ${config.activity} a ON a.id = r.${activityId} JOIN ${config.entity} e ON e.id = a.${entityId} WHERE r.status = '${config.flagged}';`), objective(`${config.id}-largest`, `Inspect largest ${config.record}`, `Return the five largest ${config.recordLabel} ids and amounts, highest first.`, `SELECT id, amount_cents FROM ${config.record} ORDER BY amount_cents DESC LIMIT 5;`, 'required')],
+    [objective(`${config.id}-regional`, `Compare regional ${config.record}`, `Return every ${config.entityLabel} region and its total ${config.recordLabel} amount.`, `SELECT e.region, SUM(r.amount_cents) FROM ${config.entity} e JOIN ${config.activity} a ON a.${entityId} = e.id JOIN ${config.record} r ON r.${activityId} = a.id GROUP BY e.region;`), objective(`${config.id}-top`, `Find the largest ${config.entity}`, `Return the three ${config.entity} with the highest total ${config.recordLabel} amount, highest first.`, `SELECT e.name, SUM(r.amount_cents) total FROM ${config.entity} e JOIN ${config.activity} a ON a.${entityId} = e.id JOIN ${config.record} r ON r.${activityId} = a.id GROUP BY e.id ORDER BY total DESC LIMIT 3;`, 'required'), objective(`${config.id}-coverage`, `Measure ${config.activity} coverage`, `Return every ${config.entityLabel} name and its ${config.recordLabel} count.`, `SELECT e.name, COUNT(r.id) FROM ${config.entity} e LEFT JOIN ${config.activity} a ON a.${entityId} = e.id LEFT JOIN ${config.record} r ON r.${activityId} = a.id GROUP BY e.id;`)],
+    [objective(`${config.id}-clean`, `Find ${config.entity} without flags`, `Return the names of ${config.entity} with no flagged ${config.record}.`, `SELECT e.name FROM ${config.entity} e LEFT JOIN ${config.activity} a ON a.${entityId} = e.id LEFT JOIN ${config.record} r ON r.${activityId} = a.id AND r.status = '${config.flagged}' WHERE r.id IS NULL;`), objective(`${config.id}-monthly`, `Establish the monthly trend`, `Return every ${config.activityLabel} month and its total ${config.recordLabel} amount, in chronological order.`, `SELECT substr(a.started_on, 1, 7), SUM(r.amount_cents) FROM ${config.activity} a JOIN ${config.record} r ON r.${activityId} = a.id GROUP BY 1 ORDER BY 1;`, 'required'), objective(`${config.id}-ranking`, `Rank the ${config.entity}`, `Return the five highest-volume ${config.entity} with totals and rank, highest first.`, `WITH totals AS (SELECT e.name, SUM(r.amount_cents) total FROM ${config.entity} e JOIN ${config.activity} a ON a.${entityId} = e.id JOIN ${config.record} r ON r.${activityId} = a.id GROUP BY e.id) SELECT name, total, ROW_NUMBER() OVER (ORDER BY total DESC) FROM totals ORDER BY 3 LIMIT 5;`, 'required')],
+  ))
+}
+
 function objective(id: string, title: string, prompt: string, starterQuery: string, order: Objective['order'] = 'irrelevant'): Objective {
   return { id, title, prompt, starterQuery, order }
 }
@@ -141,6 +173,6 @@ function starterFor(solution: string) {
 }
 
 export function buildCase(seed: string, mode: Difficulty): GeneratedCase {
-  const builders = [marginCase, freightCase, marketplaceCase, researchCase, eventsCase]
+  const builders = [marginCase, freightCase, marketplaceCase, researchCase, eventsCase, ...operationalCases.map((config) => (seed: string, mode: Difficulty) => operationalCase(seed, mode, config))]
   return builders[hash(seed) % builders.length](seed, mode)
 }
