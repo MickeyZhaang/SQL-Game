@@ -26,6 +26,25 @@ function matchesExpected(values: Value[][], expected: ExpectedResult) {
   return actualRows.sort().every((row, index) => row === expectedRows.sort()[index])
 }
 
+function formatSolution(query: string) {
+  const clauses = query.trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\bLEFT\s+JOIN\b/gi, 'LEFT_JOIN')
+    .replace(/\bINNER\s+JOIN\b/gi, 'INNER_JOIN')
+    .replace(/\b(WITH|SELECT|FROM|LEFT_JOIN|INNER_JOIN|JOIN|WHERE|GROUP\s+BY|HAVING|ORDER\s+BY|LIMIT)\b/gi, '\n$1')
+    .trim()
+    .split('\n')
+    .map((line) => line.trim().replace(/LEFT_JOIN/g, 'LEFT JOIN').replace(/INNER_JOIN/g, 'INNER JOIN'))
+  let depth = 0
+  return clauses.flatMap((line) => {
+    if (line.startsWith(')')) depth -= 1
+    const indent = '  '.repeat(Math.max(depth, 0))
+    depth += (line.match(/\(/g)?.length ?? 0) - (line.match(/\)/g)?.length ?? 0)
+    const select = line.match(/^SELECT\s+(.+)$/i)
+    return select ? [`${indent}SELECT`, `${indent}  ${select[1]}`] : [`${indent}${line}`]
+  }).join('\n')
+}
+
 async function initialize(seed: string, mode: Difficulty) {
   send({ type: 'progress', label: 'Selecting a case file', progress: 18 })
   const generated = buildCase(seed, mode)
@@ -62,7 +81,7 @@ function execute(objectiveId: string, query: string) {
 function reveal(objectiveId: string) {
   const query = solutions.get(objectiveId)
   if (!query) throw new Error('This solution is unavailable.')
-  send({ type: 'solution', objectiveId, query })
+  send({ type: 'solution', objectiveId, query: formatSolution(query) })
 }
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
