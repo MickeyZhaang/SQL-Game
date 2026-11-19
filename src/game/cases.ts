@@ -3,7 +3,7 @@ import type { CaseId, Difficulty, Objective, TableDefinition, World } from './ty
 type Value = string | number | null
 type TableLoad = { create: string; insert: string; rows: Value[][] }
 
-export type GeneratedCase = { world: World; loads: TableLoad[] }
+export type GeneratedCase = { world: World; loads: TableLoad[]; solutions: Map<string, string> }
 
 export function hash(seed: string) {
   let value = 2166136261
@@ -96,7 +96,14 @@ function table(name: string, columns: string[], rows: Value[][], create: string,
 }
 
 function makeCase(caseId: CaseId, seed: string, mode: Difficulty, caseName: string, caseSummary: string, tables: Array<TableLoad & { definition: TableDefinition }>, objectives: Objective[]): GeneratedCase {
-  return { world: { seed, mode, caseId, caseName, caseSummary, tables: tables.map((entry) => entry.definition), objectives }, loads: tables.map(({ create, insert, rows }) => ({ create, insert, rows })) }
+  const solutions = new Map(objectives.map((item) => [item.id, item.starterQuery]))
+  const visibleObjectives = objectives.map((item) => ({ ...item, starterQuery: mode === 'easy' ? starterFor(item.starterQuery) : '' }))
+  return { world: { seed, mode, caseId, caseName, caseSummary, tables: tables.map((entry) => entry.definition), objectives: visibleObjectives }, loads: tables.map(({ create, insert, rows }) => ({ create, insert, rows })), solutions }
+}
+
+function starterFor(solution: string) {
+  const source = solution.match(/\bFROM\s+([\w]+)/i)?.[1]
+  return source ? `SELECT\nFROM ${source};` : 'SELECT\nFROM'
 }
 
 export function buildCase(seed: string, mode: Difficulty): GeneratedCase {

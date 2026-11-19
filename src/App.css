@@ -24,6 +24,7 @@ button.primary, .run-button { color: #10120e; border-color: #d6e68e; background:
 .workspace { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 252px minmax(0, 1fr); border: 1px solid #31372e; min-height: 600px; }
 .schema { background: #161916; border-right: 1px solid #31372e; padding: 18px 14px; }
 .schema-heading, .editor-heading, .result-heading { display: flex; justify-content: space-between; align-items: center; }
+.editor-actions { display: flex; gap: 8px; }
 .schema-heading span { color: #9da594; font: .72rem ui-monospace, monospace; }
 .finding-count { display: flex; justify-content: space-between; color: #9da594; font-size: .75rem; padding: 14px 3px 2px; }
 .finding-count strong { color: #d6e68e; font-family: ui-monospace, monospace; }
@@ -37,7 +38,12 @@ li::before { content: '·'; color: #d6e68e; margin-right: 7px; }
 .editor-heading .eyebrow, .result-heading .eyebrow, .schema-heading .eyebrow { margin: 0; }
 .run-button { padding: 8px 11px; font-size: .8rem; }
 kbd { margin-left: 8px; color: #536037; font-family: inherit; }
-textarea { resize: vertical; border: 0; outline: 0; background: #111310; color: #e6eadf; padding: 22px; font-size: .93rem; line-height: 1.65; }
+.editor-surface { position: relative; min-height: 0; }
+textarea { width: 100%; height: 100%; resize: vertical; border: 0; outline: 0; background: #111310; color: #e6eadf; padding: 22px; font-size: .93rem; line-height: 1.65; }
+.solution-overlay { position: absolute; inset: 0; overflow: auto; padding: 20px 22px; background: #111310; color: #e6eadf; }
+.solution-overlay > div { display: flex; justify-content: space-between; align-items: center; }
+.solution-overlay .eyebrow { margin: 0; }
+.solution-overlay pre { margin: 22px 0 0; white-space: pre-wrap; color: #d6e68e; font: .93rem/1.65 ui-monospace, monospace; }
 .result-panel { border-top: 1px solid #31372e; min-height: 0; background: #151714; }
 .solved { color: #d6e68e; font-size: .8rem; font-weight: 700; }
 .empty, .error { padding: 20px; color: #969d90; }

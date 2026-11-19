@@ -35,6 +35,7 @@ function App() {
   const [progress, setProgress] = useState({ label: 'Preparing your case file', progress: 0 })
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<QueryResult | null>(null)
+  const [revealedQuery, setRevealedQuery] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
@@ -53,6 +54,7 @@ function App() {
     startProgressTimer()
     setIsLoading(true)
     setResult(null)
+    setRevealedQuery('')
     setError('')
     setProgress({ label: 'Preparing your case file', progress: 5 })
   }
@@ -85,6 +87,7 @@ function App() {
         setResult(message.result)
         setError('')
       }
+      if (message.type === 'solution' && message.objectiveId === currentObjectiveId.current) setRevealedQuery(message.query)
       if (message.type === 'error') setError(message.message)
     }
     return () => {
@@ -128,6 +131,11 @@ function App() {
     worker.current?.postMessage({ type: 'execute', objectiveId: currentObjectiveId.current, query })
   }
 
+  function revealSolution() {
+    if (!currentObjectiveId.current) return
+    worker.current?.postMessage({ type: 'reveal', objectiveId: currentObjectiveId.current })
+  }
+
   function continueInvestigation() {
     if (!world || !result?.solved) return
     setCompletedObjectives((current) => [...new Set([...current, result.objectiveId])])
@@ -138,6 +146,7 @@ function App() {
     setObjectiveIndex(nextIndex)
     setQuery(nextObjective.starterQuery)
     setResult(null)
+    setRevealedQuery('')
   }
 
   if (isLoading || !world) {
@@ -156,7 +165,7 @@ function App() {
     <section className="case-file"><p className="eyebrow">{investigationComplete ? 'CASE COMPLETE' : `INVESTIGATION ${String(objectiveIndex + 1).padStart(2, '0')} / ${String(world.objectives.length).padStart(2, '0')}`}</p><h2>{investigationComplete ? 'The case file is complete' : objective.title}</h2><p>{investigationComplete ? 'Start another run to investigate a new deterministic dataset.' : objective.prompt}</p></section>
     <section className="workspace">
       <aside className="schema"><div className="schema-heading"><p className="eyebrow">DATABASE</p><span>SQLite</span></div><div className="finding-count"><span>Findings</span><strong>{completedObjectives.length} / {world.objectives.length}</strong></div>{world.tables.map((table) => <section className="table-card" key={table.name}><h3>{table.name}</h3><p>{table.rowCount} records</p><ul>{table.columns.map((column) => <li key={column}>{column}</li>)}</ul></section>)}</aside>
-      <section className="editor-panel"><div className="editor-heading"><p className="eyebrow">QUERY</p><button className="run-button" disabled={investigationComplete} onClick={runQuery}>Run query <kbd>⌘↵</kbd></button></div><textarea aria-label="SQL query" disabled={investigationComplete} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') runQuery() }} spellCheck="false" />{error && <p className="error">{error}</p>}<div className="result-panel"><div className="result-heading"><p className="eyebrow">RESULTS</p>{result?.solved && <span className="solved">Finding confirmed</span>}</div>{result ? <ResultTable result={result} /> : <p className="empty">Run a query to inspect its result.</p>}{result?.solved && !investigationComplete && <div className="continue-row"><p>{objectiveIndex + 1 === world.objectives.length ? 'All findings are confirmed.' : 'This finding unlocks the next lead.'}</p><button className="primary" onClick={continueInvestigation}>{objectiveIndex + 1 === world.objectives.length ? 'Close case' : 'Continue investigation'}</button></div>}</div></section>
+      <section className="editor-panel"><div className="editor-heading"><p className="eyebrow">QUERY</p><div className="editor-actions"><button disabled={investigationComplete} onClick={revealSolution}>Reveal solution</button><button className="run-button" disabled={investigationComplete} onClick={runQuery}>Run query <kbd>⌘↵</kbd></button></div></div><div className="editor-surface"><textarea aria-label="SQL query" disabled={investigationComplete} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') runQuery() }} spellCheck="false" />{revealedQuery && <div className="solution-overlay"><div><p className="eyebrow">CANONICAL SOLUTION</p><button onClick={() => setRevealedQuery('')}>Return to draft</button></div><pre>{revealedQuery}</pre></div>}</div>{error && <p className="error">{error}</p>}<div className="result-panel"><div className="result-heading"><p className="eyebrow">RESULTS</p>{result?.solved && <span className="solved">Finding confirmed</span>}</div>{result ? <ResultTable result={result} /> : <p className="empty">Run a query to inspect its result.</p>}{result?.solved && !investigationComplete && <div className="continue-row"><p>{objectiveIndex + 1 === world.objectives.length ? 'All findings are confirmed.' : 'This finding unlocks the next lead.'}</p><button className="primary" onClick={continueInvestigation}>{objectiveIndex + 1 === world.objectives.length ? 'Close case' : 'Continue investigation'}</button></div>}</div></section>
     </section>
   </main>
 }

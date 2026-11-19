@@ -8,6 +8,7 @@ type ExpectedResult = { values: Value[][]; order: Objective['order'] }
 
 let database: Database | undefined
 let expectedResults = new Map<string, ExpectedResult>()
+let solutions = new Map<string, string>()
 
 function send(message: WorkerMessage) {
   self.postMessage(message)
@@ -39,8 +40,9 @@ async function initialize(seed: string, mode: Difficulty) {
     rows.forEach((row) => statement?.run(row))
     statement?.free()
   })
+  solutions = generated.solutions
   expectedResults = new Map(generated.world.objectives.map((objective) => {
-    const result = database?.exec(objective.starterQuery)[0]
+    const result = database?.exec(solutions.get(objective.id) ?? '')[0]
     return [objective.id, { values: (result?.values ?? []) as Value[][], order: objective.order }]
   }))
   send({ type: 'progress', label: 'Preparing the investigation', progress: 88 })
@@ -57,13 +59,20 @@ function execute(objectiveId: string, query: string) {
   send({ type: 'result', result })
 }
 
+function reveal(objectiveId: string) {
+  const query = solutions.get(objectiveId)
+  if (!query) throw new Error('This solution is unavailable.')
+  send({ type: 'solution', objectiveId, query })
+}
+
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   if (event.data.type === 'initialize') {
     initialize(event.data.seed, event.data.mode).catch((error: unknown) => send({ type: 'error', message: error instanceof Error ? error.message : 'Unable to initialize this run.' }))
     return
   }
   try {
-    execute(event.data.objectiveId, event.data.query)
+    if (event.data.type === 'reveal') reveal(event.data.objectiveId)
+    else execute(event.data.objectiveId, event.data.query)
   } catch (error) {
     send({ type: 'error', message: error instanceof Error ? error.message : 'The query could not be run.' })
   }

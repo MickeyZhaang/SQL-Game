@@ -37,8 +37,10 @@ export type WorkerMessage =
   | { type: 'progress'; label: string; progress: number }
   | { type: 'ready'; world: World }
   | { type: 'result'; result: QueryResult }
+  | { type: 'solution'; objectiveId: string; query: string }
   | { type: 'error'; message: string }
 
 export type WorkerRequest =
   | { type: 'initialize'; seed: string; mode: Difficulty }
   | { type: 'execute'; objectiveId: string; query: string }
+  | { type: 'reveal'; objectiveId: string }
