@@ -87,6 +87,40 @@ function marketplaceCase(seed: string, mode: Difficulty): GeneratedCase {
   ))
 }
 
+function researchCase(seed: string, mode: Difficulty): GeneratedCase {
+  const random = randomFor(seed)
+  const divisions = ['Bio', 'Climate', 'Materials', 'Systems']
+  const researchers = Array.from({ length: 20 }, (_, index) => [index + 1, `${choose(random, ['Avery', 'Mina', 'Theo', 'Jules'])} ${choose(random, ['Chen', 'Morgan', 'Singh', 'Hayes'])}`, choose(random, divisions)])
+  const experiments = Array.from({ length: 58 }, (_, index) => [index + 1, 1 + Math.floor(random() * researchers.length), choose(random, ['cell', 'water', 'alloy', 'sensor']), `2025-${String(1 + Math.floor(random() * 6)).padStart(2, '0')}-${String(1 + Math.floor(random() * 28)).padStart(2, '0')}`])
+  const observations = experiments.flatMap(([id]) => Array.from({ length: random() > .18 ? 1 + Math.floor(random() * 4) : 0 }, (_, index) => [Number(id) * 10 + index, id, 20 + Math.floor(random() * 900), random() > .16 ? 'verified' : 'flagged']))
+  return makeCase('research', seed, mode, 'The contaminated signal', 'A research case tracing suspicious readings through experiments and validation records.', [
+    table('researchers', ['id', 'name', 'division'], researchers, 'CREATE TABLE researchers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, division TEXT NOT NULL)', 'INSERT INTO researchers VALUES (?, ?, ?)'),
+    table('experiments', ['id', 'researcher_id', 'discipline', 'started_on'], experiments, 'CREATE TABLE experiments (id INTEGER PRIMARY KEY, researcher_id INTEGER NOT NULL, discipline TEXT NOT NULL, started_on TEXT NOT NULL)', 'INSERT INTO experiments VALUES (?, ?, ?, ?)'),
+    table('observations', ['id', 'experiment_id', 'signal', 'status'], observations, 'CREATE TABLE observations (id INTEGER PRIMARY KEY, experiment_id INTEGER NOT NULL, signal INTEGER NOT NULL, status TEXT NOT NULL)', 'INSERT INTO observations VALUES (?, ?, ?, ?)'),
+  ], objectives(mode,
+    [objective('bio-researchers', 'Map the bio division', 'Return the name and division for every Bio researcher.', "SELECT name, division FROM researchers WHERE division = 'Bio';"), objective('flagged-observations', 'Locate flagged observations', 'Return each flagged observation id, researcher name, and discipline.', "SELECT o.id, r.name, e.discipline FROM observations o JOIN experiments e ON e.id = o.experiment_id JOIN researchers r ON r.id = e.researcher_id WHERE o.status = 'flagged';"), objective('largest-signals', 'Inspect largest signals', 'Return the five largest observation ids and signals, highest first.', 'SELECT id, signal FROM observations ORDER BY signal DESC LIMIT 5;', 'required')],
+    [objective('division-signals', 'Compare division signals', 'Return every researcher division and its total signal.', 'SELECT r.division, SUM(o.signal) FROM researchers r JOIN experiments e ON e.researcher_id = r.id JOIN observations o ON o.experiment_id = e.id GROUP BY r.division;'), objective('top-researchers', 'Find the highest-signal researchers', 'Return the three researchers with the highest total signal, highest first.', 'SELECT r.name, SUM(o.signal) total FROM researchers r JOIN experiments e ON e.researcher_id = r.id JOIN observations o ON o.experiment_id = e.id GROUP BY r.id ORDER BY total DESC LIMIT 3;', 'required'), objective('experiment-coverage', 'Measure observation coverage', 'Return every experiment id and its observation count.', 'SELECT e.id, COUNT(o.id) FROM experiments e LEFT JOIN observations o ON o.experiment_id = e.id GROUP BY e.id;')],
+    [objective('unobserved-experiments', 'Find unobserved experiments', 'Return the ids of experiments without observations.', 'SELECT e.id FROM experiments e LEFT JOIN observations o ON o.experiment_id = e.id WHERE o.id IS NULL;'), objective('monthly-signal', 'Establish the signal trend', 'Return every experiment month and its total signal, in chronological order.', 'SELECT substr(e.started_on, 1, 7), SUM(o.signal) FROM experiments e JOIN observations o ON o.experiment_id = e.id GROUP BY 1 ORDER BY 1;', 'required'), objective('researcher-ranking', 'Rank the researchers', 'Return the five highest-signal researchers with totals and rank, highest first.', 'WITH totals AS (SELECT r.name, SUM(o.signal) total FROM researchers r JOIN experiments e ON e.researcher_id = r.id JOIN observations o ON o.experiment_id = e.id GROUP BY r.id) SELECT name, total, ROW_NUMBER() OVER (ORDER BY total DESC) FROM totals ORDER BY 3 LIMIT 5;', 'required')],
+  ))
+}
+
+function eventsCase(seed: string, mode: Difficulty): GeneratedCase {
+  const random = randomFor(seed)
+  const cities = ['Portland', 'Austin', 'Denver', 'Raleigh']
+  const venues = Array.from({ length: 16 }, (_, index) => [index + 1, `${choose(random, ['Harbor', 'Atlas', 'Civic', 'Juniper'])} ${choose(random, ['Hall', 'Stage', 'Center', 'Pavilion'])}`, choose(random, cities)])
+  const events = Array.from({ length: 54 }, (_, index) => [index + 1, 1 + Math.floor(random() * venues.length), choose(random, ['music', 'comedy', 'sport', 'talk']), `2025-${String(1 + Math.floor(random() * 6)).padStart(2, '0')}-${String(1 + Math.floor(random() * 28)).padStart(2, '0')}`])
+  const tickets = Array.from({ length: 180 }, (_, index) => [index + 1, 1 + Math.floor(random() * events.length), 1500 + Math.floor(random() * 18000), random() > .14 ? 'sold' : 'refunded'])
+  return makeCase('events', seed, mode, 'The empty house', 'An event operations case connecting venues, programming, ticket sales, and refunds.', [
+    table('venues', ['id', 'name', 'city'], venues, 'CREATE TABLE venues (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL)', 'INSERT INTO venues VALUES (?, ?, ?)'),
+    table('events', ['id', 'venue_id', 'category', 'held_on'], events, 'CREATE TABLE events (id INTEGER PRIMARY KEY, venue_id INTEGER NOT NULL, category TEXT NOT NULL, held_on TEXT NOT NULL)', 'INSERT INTO events VALUES (?, ?, ?, ?)'),
+    table('tickets', ['id', 'event_id', 'price_cents', 'status'], tickets, 'CREATE TABLE tickets (id INTEGER PRIMARY KEY, event_id INTEGER NOT NULL, price_cents INTEGER NOT NULL, status TEXT NOT NULL)', 'INSERT INTO tickets VALUES (?, ?, ?, ?)'),
+  ], objectives(mode,
+    [objective('austin-venues', 'Map Austin venues', 'Return the name and city for every venue in Austin.', "SELECT name, city FROM venues WHERE city = 'Austin';"), objective('refunded-tickets', 'Locate refunded tickets', 'Return each refunded ticket id, venue name, and event category.', "SELECT t.id, v.name, e.category FROM tickets t JOIN events e ON e.id = t.event_id JOIN venues v ON v.id = e.venue_id WHERE t.status = 'refunded';"), objective('highest-tickets', 'Inspect expensive tickets', 'Return the five most expensive ticket ids and prices, highest first.', 'SELECT id, price_cents FROM tickets ORDER BY price_cents DESC LIMIT 5;', 'required')],
+    [objective('category-sales', 'Compare category sales', 'Return every event category and its total ticket revenue.', "SELECT e.category, SUM(t.price_cents) FROM events e JOIN tickets t ON t.event_id = e.id WHERE t.status = 'sold' GROUP BY e.category;"), objective('top-venues', 'Find the top venues', 'Return the three venues with the highest sold-ticket revenue, highest first.', "SELECT v.name, SUM(t.price_cents) total FROM venues v JOIN events e ON e.venue_id = v.id JOIN tickets t ON t.event_id = e.id WHERE t.status = 'sold' GROUP BY v.id ORDER BY total DESC LIMIT 3;", 'required'), objective('ticket-coverage', 'Measure ticket coverage', 'Return every event id and its ticket count.', 'SELECT e.id, COUNT(t.id) FROM events e LEFT JOIN tickets t ON t.event_id = e.id GROUP BY e.id;')],
+    [objective('refund-free-events', 'Find refund-free events', 'Return the ids of events with no refunded tickets.', "SELECT e.id FROM events e LEFT JOIN tickets t ON t.event_id = e.id AND t.status = 'refunded' WHERE t.id IS NULL;"), objective('monthly-sales', 'Establish the revenue trend', 'Return every event month and its sold-ticket revenue, in chronological order.', "SELECT substr(e.held_on, 1, 7), SUM(t.price_cents) FROM events e JOIN tickets t ON t.event_id = e.id WHERE t.status = 'sold' GROUP BY 1 ORDER BY 1;", 'required'), objective('venue-ranking', 'Rank the venues', 'Return the five highest-revenue venues with totals and rank, highest first.', "WITH totals AS (SELECT v.name, SUM(t.price_cents) total FROM venues v JOIN events e ON e.venue_id = v.id JOIN tickets t ON t.event_id = e.id WHERE t.status = 'sold' GROUP BY v.id) SELECT name, total, ROW_NUMBER() OVER (ORDER BY total DESC) FROM totals ORDER BY 3 LIMIT 5;", 'required')],
+  ))
+}
+
 function objective(id: string, title: string, prompt: string, starterQuery: string, order: Objective['order'] = 'irrelevant'): Objective {
   return { id, title, prompt, starterQuery, order }
 }
@@ -107,6 +141,6 @@ function starterFor(solution: string) {
 }
 
 export function buildCase(seed: string, mode: Difficulty): GeneratedCase {
-  const builders = [marginCase, freightCase, marketplaceCase]
+  const builders = [marginCase, freightCase, marketplaceCase, researchCase, eventsCase]
   return builders[hash(seed) % builders.length](seed, mode)
 }

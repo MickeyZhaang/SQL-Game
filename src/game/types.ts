@@ -14,7 +14,7 @@ export type Objective = {
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
-export type CaseId = 'margin' | 'freight' | 'marketplace'
+export type CaseId = 'margin' | 'freight' | 'marketplace' | 'research' | 'events'
 
 export type World = {
   seed: string
